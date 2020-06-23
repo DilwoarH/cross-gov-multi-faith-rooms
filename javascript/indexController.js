@@ -13,7 +13,6 @@ IndexController.prototype.populateTable = function() {
 
   axios.get(this.locationAPI)
   .then(function (results) {
-    console.log(results);
     _this.buildTableBody(
       document.querySelectorAll('#location-list tbody')[0],
       results.data
@@ -23,6 +22,7 @@ IndexController.prototype.populateTable = function() {
   .catch(function (error) {
     // handle error
     console.log(error);
+    document.getElementById('error_message').style.display = 'block';
   })
 };
 
