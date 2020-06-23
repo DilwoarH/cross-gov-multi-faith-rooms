@@ -1,5 +1,5 @@
 function IndexController() {
-  this.locationCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTAFOpil_7wi0vIL3bki50rWRHbAJQ3pE7q_dbqDsXOz8OGX0O-HpErZJls7LTJaMzs4MAbvBwBf81s/pub?gid=905377423&single=true&output=csv";
+  this.locationAPI = "https://script.google.com/macros/s/AKfycbwoTjr_2JbkGxX2_k7YsVsLsHf7w4KqvDWFYDlpALSHqNbnFYsy/exec";
   this.populateTable();
   this.initTableSearch();
   nunjucks.configure('views', { autoescape: true });
@@ -10,17 +10,20 @@ function IndexController() {
  ************************/
 IndexController.prototype.populateTable = function() {
   var _this = this;
-  Papa.parse(this.locationCSV, {
-    header: true,
-    download: true,
-    complete: function(results) {
-      _this.buildTableBody(
-        document.querySelectorAll('#location-list tbody')[0],
-        results.data
-      );
-      _this.initLinkTracking();
-    }
-  });
+
+  axios.get(this.locationAPI)
+  .then(function (results) {
+    _this.buildTableBody(
+      document.querySelectorAll('#location-list tbody')[0],
+      results.data
+    );
+    _this.initLinkTracking();
+  })
+  .catch(function (error) {
+    // handle error
+    console.log(error);
+    document.getElementById('error_message').style.display = 'block';
+  })
 };
 
 /*
@@ -28,27 +31,23 @@ IndexController.prototype.populateTable = function() {
  */
 IndexController.prototype.buildTableBody = function(tableBody, rooms) {
   rooms = rooms.map(function(room){
-    if (!room["Timestamp"] || !room["Timestamp"].length || room['Approved'] !== "TRUE") {
-      return null;
-    }
-
     // transformData
     return {
-      createdAt:          room["Timestamp"],
-      organisationName:   room['Organisation name(s)'],
-      addressLine1:       room['Address line 1'],
-      addressLine2:       room['Address line 2'],
-      city:               room['Town / City'],
-      county:             room['County'],
-      postcode:           room['Postcode'],
-      location:           room['Where is the multi faith room located in the building? (For example 6th floor, opposite meeting room 612)'],
-      notes:              room['Any notes or things to be aware of?'],
+      createdAt:          room["created_at"],
+      organisationName:   room['organisation_name'],
+      addressLine1:       room['address_line_1'],
+      addressLine2:       room['address_line_2'],
+      city:               room['town_city'],
+      county:             room['county'],
+      postcode:           room['postcode'],
+      location:           room['room_location'],
+      notes:              room['notes'],
       googleMapsURL:      'http://maps.google.com/?q='+ [
-                            room['Address line 1'],
-                            room['Address line 2'],
-                            room['Town / City'],
-                            room['County'],
-                            room['Postcode']
+                            room['address_line_1'],
+                            room['address_line_2'],
+                            room['town_city'],
+                            room['county'],
+                            room['postcode']
                           ].join('+')
     };
   })
